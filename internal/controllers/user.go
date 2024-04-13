@@ -25,8 +25,8 @@ func (userc *UserController) CreateUser(ctx context.Context, user *m.User) error
 		return err
 	}
 	_, err = userc.DB.Exec(ctx,
-		"INSERT INTO users (name, surname, email, password, role) VALUES ($1, $2, $3, $4, $5)",
-		user.Name, user.Surname, user.Email, string(hashedPassword), user.Role)
+		"INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)",
+		user.Name, user.Email, string(hashedPassword), user.Role)
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint") && strings.Contains(err.Error(), "Email") {
 			return fmt.Errorf("email %s already exists", user.Email)
@@ -58,7 +58,7 @@ func (userc *UserController) GetUserByID(ctx context.Context, id int64) (*m.User
 	userc.lg.Debugln("Getting user by ID at controller level")
 	var user m.User
 	err := userc.DB.QueryRow(ctx, "SELECT id, name, surname, role, passwrod FROM users WHERE id = $1", id).
-		Scan(&user.ID, &user.Name, &user.Surname, &user.Email, &user.Password, &user.Role)
+		Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role)
 	if err != nil {
 		userc.lg.Errorf("user controller - GetUserByID - db exec - %v", err)
 		return nil, err
@@ -79,7 +79,7 @@ func (userc *UserController) GetAllUsers(ctx context.Context) ([]m.User, error) 
 	var users []m.User
 	for rows.Next() {
 		var user m.User
-		if err := rows.Scan(&user.ID, &user.Name, &user.Surname, &user.Email, &user.Role); err != nil {
+		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Role); err != nil {
 			userc.lg.Errorf("user controller - GetAllUsers - scan row - %v", err)
 			return nil, err
 		}
