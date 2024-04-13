@@ -1,15 +1,23 @@
 package models
 
+import (
+	"time"
+)
+
 type User struct {
-	ID       int64  `json:"id,omitempty"`
-	Name     string `json:"name"`
-	Surname  string `json:"surname"`
-	Role     string `json:"role"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	ID       int
+	Name     string
+	Email    string
+	Password string
+	Role     string
 }
 
-
+type UserActivity struct {
+	ID     int
+	UserID int
+	Route  string
+	Time   time.Time
+}
 
 type LoginRequest struct {
   Email    string `json:"email"`
