@@ -25,8 +25,8 @@ func (userc *UserController) CreateUser(ctx context.Context, user *m.User) error
 		return err
 	}
 	_, err = userc.DB.Exec(ctx,
-		"INSERT INTO users (name, surname, email, password) VALUES ($1, $2, $3, $4)",
-		user.Name, user.Surname, user.Email, string(hashedPassword))
+		"INSERT INTO users (name, surname, email, password, role) VALUES ($1, $2, $3, $4, $5)",
+		user.Name, user.Surname, user.Email, string(hashedPassword), user.Role)
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint") && strings.Contains(err.Error(), "Email") {
 			return fmt.Errorf("email %s already exists", user.Email)
@@ -37,7 +37,7 @@ func (userc *UserController) CreateUser(ctx context.Context, user *m.User) error
 	return nil
 }
 
-func (userc *UserController) Authenticate(ctx context.Context, email, password string, enable bool) (m.User, error) {
+func (userc *UserController) Authenticate(ctx context.Context, email, password string) (m.User, error) {
 	userc.lg.Debugln("User Authentication at controller level")
 	var user m.User
 	err := userc.DB.QueryRow(ctx, "SELECT id, email, password FROM users WHERE email=$1", email).
@@ -50,10 +50,6 @@ func (userc *UserController) Authenticate(ctx context.Context, email, password s
 	if err != nil {
 		userc.lg.Errorf("user controller - Authenticate - hash and password comparison - %v", err)
 		return m.User{}, errors.New("incorrect password")
-	}
-	if enable {
-		userc.lg.Error("user controller - Authenticate - user enable status")
-		return m.User{}, errors.New("account not enabled")
 	}
 	return user, nil
 }
