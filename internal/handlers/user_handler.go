@@ -99,6 +99,43 @@ func (userh *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResponse)
 }
 
+func (userh *UserHandler) GetUserPerformance(w http.ResponseWriter, r *http.Request) {
+	// Get user ID from session
+	session, err := userh.store.Get(r, "session-name")
+	if err != nil {
+		userh.lg.Errorf("user handler - GetUserPerformance - session get - %v", err)
+		http.Error(w, "Failed to retrieve session", http.StatusInternalServerError)
+		return
+	}
+
+	userID, ok := session.Values["user_id"].(int)
+	if !ok {
+		http.Error(w, "Session does not contain user ID", http.StatusUnauthorized)
+		return
+	}
+
+	// Fetch user's performance data from the controller
+	performance, err := userh.userc.GetUserPerformance(r.Context(), userID)
+	if err != nil {
+		userh.lg.Errorf("user handler - GetUserPerformance - get user performance - %v", err)
+		http.Error(w, "Failed to retrieve user performance", http.StatusInternalServerError)
+		return
+	}
+
+	// Convert performance data to JSON
+	jsonResponse, err := json.Marshal(performance)
+	if err != nil {
+		userh.lg.Errorf("user handler - GetUserPerformance - json marshal - %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Write JSON response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
+}
+
 func (userh *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	session, err := userh.store.Get(r, "session-name")
 	if err != nil {

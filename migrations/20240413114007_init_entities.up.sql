@@ -65,7 +65,9 @@ CREATE TABLE student_performance_by_subject (
     SubjectID INTEGER NOT NULL,
     StudentID INTEGER NOT NULL,
     OverallScore INTEGER, 
+    AssignmentID INTEGER, -- Add the assignment_id field
     FOREIGN KEY (SubjectID) REFERENCES subjects(ID),
     FOREIGN KEY (StudentID) REFERENCES users(ID),
+    FOREIGN KEY (AssignmentID) REFERENCES assignments(ID), -- Add foreign key constraint
     PRIMARY KEY (SubjectID, StudentID)
 );

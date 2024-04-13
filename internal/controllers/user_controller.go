@@ -8,6 +8,7 @@ import (
 
 	m "github.com/BeiymTech-hacknu2024/BeiymTech-hacknu2024-backend/internal/models"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -57,8 +58,8 @@ func (userc *UserController) Authenticate(ctx context.Context, email, password s
 func (userc *UserController) GetUserByID(ctx context.Context, id int) (*m.User, error) {
 	userc.lg.Debugln("Getting user by ID at controller level")
 	var user m.User
-	err := userc.DB.QueryRow(ctx, "SELECT id, name, role, password FROM users WHERE id = $1", id).
-		Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role)
+	err := userc.DB.QueryRow(ctx, "SELECT name, email, password, role FROM users WHERE id = $1", id).
+		Scan(&user.Name, &user.Email, &user.Password, &user.Role)
 	if err != nil {
 		userc.lg.Errorf("user controller - GetUserByID - db exec - %v", err)
 		return nil, err
@@ -66,6 +67,23 @@ func (userc *UserController) GetUserByID(ctx context.Context, id int) (*m.User, 
 	return &user, nil
 }
 
+func (userc *UserController) GetUserPerformance(ctx context.Context, userID int) (m.StudentPerformanceBySubject, error) {
+	var performance m.StudentPerformanceBySubject
+
+	err := userc.DB.QueryRow(ctx, `
+        SELECT subjectid, overallscore, array_agg(assignmentid)
+        FROM student_performance_by_subject
+        WHERE studentid = $1
+        GROUP BY subjectid, overallscore
+    `, userID).
+		Scan(&performance.SubjectID, &performance.OverallScore, pq.Array(&performance.AssignmentIDList))
+	if err != nil {
+		userc.lg.Errorf("user controller - GetUserPerformance - db query - %v", err)
+		return m.StudentPerformanceBySubject{}, err
+	}
+
+	return performance, nil
+}
 func (userc *UserController) GetAllUsers(ctx context.Context, userID int) ([]m.User, error) {
 
 	users := make([]m.User, 0)

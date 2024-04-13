@@ -13,9 +13,11 @@ func NewRouter(userh *handlers.UserHandler, assignh *handlers.AssignmentHandler)
 
 	r.With(userh.RequireAuth).Get("/users", userh.GetUsers)
 	r.With(userh.RequireAuth).Get("/user", userh.GetUser)
-
+	r.With(userh.RequireAuth).Get("/user/performance", userh.GetUserPerformance)
 	r.With(userh.RequireAuth).Post("/assignments/create", assignh.CreateAssignment)
 	r.With(userh.RequireAuth).Patch("/assignment/update", assignh.UpdateAssignment)
+	r.With(userh.RequireAuth).Post("/assignment/submit", assignh.SubmitAssignment)
+	// r.With(userh.RequireAuth).Post("/report/create", reporth.GenerateReport)
 
 	return r
 

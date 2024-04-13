@@ -57,5 +57,41 @@ func (assignh *AssignmentHandler) CreateAssignment(w http.ResponseWriter, r *htt
 }
 
 func (assignh *AssignmentHandler) UpdateAssignment(w http.ResponseWriter, r *http.Request) {
-	assignh.lg.Debugln("Handler level - Update Assignment")
+	panic("implement me")
+}
+
+func (assignh *AssignmentHandler) SubmitAssignment(w http.ResponseWriter, r *http.Request) {
+	var submitReq models.SubmitRequest
+	if err := json.NewDecoder(r.Body).Decode(&submitReq); err != nil {
+		assignh.lg.Errorf("assignment handler - SubmitAssignment - json decode - %v", err)
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	// Check each answer against the correct answer
+	var result []bool
+	for _, answer := range submitReq.Answers {
+		// Get the correct answer for the question
+		correctAnswer, err := assignh.assignc.GetCorrectAnswer(r.Context(), answer.QuestionID)
+		if err != nil {
+			assignh.lg.Errorf("assignment handler - SubmitAssignment - get correct answer - %v", err)
+			http.Error(w, "Failed to get correct answer", http.StatusInternalServerError)
+			return
+		}
+
+		// Check if the submitted answer is correct
+		isCorrect := correctAnswer.ID == answer.SelectedAnswerID
+		result = append(result, isCorrect)
+	}
+
+	// Return the result indicating which questions were answered correctly
+	jsonResult, err := json.Marshal(result)
+	if err != nil {
+		assignh.lg.Errorf("assignment handler - SubmitAssignment - json marshal - %v", err)
+		http.Error(w, "Failed to marshal result", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(jsonResult)
 }
