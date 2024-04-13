@@ -1,10 +1,20 @@
 package models
 
+import (
+	"time"
+)
+
 type User struct {
-  ID int64
-  Name string
-  Surname string
-  Role string
-  Email string
-  Password string
+	ID       int
+	Name     string
+	Email    string
+	Password string
+	Role     string
+}
+
+type UserActivity struct {
+	ID     int
+	UserID int
+	Route  string
+	Time   time.Time
 }
