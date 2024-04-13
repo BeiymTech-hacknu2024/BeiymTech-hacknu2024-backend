@@ -17,6 +17,13 @@ type UserController struct {
 	lg *logrus.Logger
 }
 
+func NewUserController(db *pgxpool.Pool, lg *logrus.Logger) *UserController {
+	return &UserController{
+		DB: db,
+		lg: lg,
+	}
+}
+
 func (userc *UserController) CreateUser(ctx context.Context, user *m.User) error {
 	userc.lg.Debugln("User Creation at controller level")
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
@@ -25,8 +32,8 @@ func (userc *UserController) CreateUser(ctx context.Context, user *m.User) error
 		return err
 	}
 	_, err = userc.DB.Exec(ctx,
-		"INSERT INTO users (name, surname, email, password, role) VALUES ($1, $2, $3, $4, $5)",
-		user.Name, user.Surname, user.Email, string(hashedPassword), user.Role)
+		"INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)",
+		user.Name, user.Email, string(hashedPassword), user.Role)
 	if err != nil {
 		if strings.Contains(err.Error(), "unique constraint") && strings.Contains(err.Error(), "Email") {
 			return fmt.Errorf("email %s already exists", user.Email)
@@ -57,8 +64,8 @@ func (userc *UserController) Authenticate(ctx context.Context, email, password s
 func (userc *UserController) GetUserByID(ctx context.Context, id int64) (*m.User, error) {
 	userc.lg.Debugln("Getting user by ID at controller level")
 	var user m.User
-	err := userc.DB.QueryRow(ctx, "SELECT id, name, surname, role, passwrod FROM users WHERE id = $1", id).
-		Scan(&user.ID, &user.Name, &user.Surname, &user.Email, &user.Password, &user.Role)
+	err := userc.DB.QueryRow(ctx, "SELECT id, name, role, passwrod FROM users WHERE id = $1", id).
+		Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role)
 	if err != nil {
 		userc.lg.Errorf("user controller - GetUserByID - db exec - %v", err)
 		return nil, err
@@ -66,10 +73,46 @@ func (userc *UserController) GetUserByID(ctx context.Context, id int64) (*m.User
 	return &user, nil
 }
 
+func (userc *UserController) CreateAssignment(ctx context.Context, assignment *m.Assignment, studentIDs []int) error {
+	userc.lg.Debugln("Creating assignment at controller level")
+	tx, err := userc.DB.Begin(ctx)
+	if err != nil {
+		userc.lg.Errorf("user controller - CreateAssignment - db begin transaction - %v", err)
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	var assignmentID int
+	// Insert the assignment and get the ID
+	err = tx.QueryRow(ctx, "INSERT INTO assignments (name, topic_id, weight, teacher_id) VALUES ($1, $2, $3, $4) RETURNING id",
+		assignment.Name, assignment.TopicID, assignment.Weight, assignment.TeacherID).Scan(&assignmentID)
+	if err != nil {
+		userc.lg.Errorf("user controller - CreateAssignment - db exec - %v", err)
+		return err
+	}
+
+	// Link the assignment to students
+	for _, studentID := range studentIDs {
+		_, err = tx.Exec(ctx, "INSERT INTO assignment_students (assignment_id, student_id) VALUES ($1, $2)",
+			assignmentID, studentID)
+		if err != nil {
+			userc.lg.Errorf("user controller - CreateAssignment - link to students - %v", err)
+			return err
+		}
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		userc.lg.Errorf("user controller - CreateAssignment - commit transaction - %v", err)
+		return err
+	}
+
+	return nil
+}
+
 func (userc *UserController) GetAllUsers(ctx context.Context) ([]m.User, error) {
 	userc.lg.Debugln("Getting all users at controller level")
 
-	rows, err := userc.DB.Query(ctx, "SELECT id, name, surname, email, role FROM users")
+	rows, err := userc.DB.Query(ctx, "SELECT id, name, email, role FROM users")
 	if err != nil {
 		userc.lg.Errorf("user controller - GetAllUsers - db query - %v", err)
 		return nil, err
@@ -79,7 +122,7 @@ func (userc *UserController) GetAllUsers(ctx context.Context) ([]m.User, error) 
 	var users []m.User
 	for rows.Next() {
 		var user m.User
-		if err := rows.Scan(&user.ID, &user.Name, &user.Surname, &user.Email, &user.Role); err != nil {
+		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Role); err != nil {
 			userc.lg.Errorf("user controller - GetAllUsers - scan row - %v", err)
 			return nil, err
 		}
@@ -91,11 +134,4 @@ func (userc *UserController) GetAllUsers(ctx context.Context) ([]m.User, error) 
 	}
 
 	return users, nil
-}
-
-func NewUserController(db *pgxpool.Pool, lg *logrus.Logger) *UserController {
-	return &UserController{
-		DB: db,
-		lg: lg,
-	}
 }

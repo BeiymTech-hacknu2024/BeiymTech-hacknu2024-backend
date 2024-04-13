@@ -24,6 +24,11 @@ func NewUserHandler(userc *controllers.UserController, store *sessions.CookieSto
 	}
 }
 
+type CreateAssignmentRequest struct {
+	Assignment models.Assignment
+	StudentIDs []int
+}
+
 func (userh *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	userh.lg.Debugln("User Registration at handler level")
 	var user models.User
@@ -64,4 +69,22 @@ func (userh *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	session.Save(r, w)
 
 	http.Error(w, "User logged in sucessfully", http.StatusCreated)
+}
+
+func (userh *UserHandler) CreateAssignment(w http.ResponseWriter, r *http.Request) {
+	userh.lg.Debugln("Handler level - Create Assignment")
+	var req CreateAssignmentRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		userh.lg.Errorf("user handler - CreateAssignment - json decode - %v", err)
+		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	if err := userh.userc.CreateAssignment(r.Context(), &req.Assignment, req.StudentIDs); err != nil {
+		userh.lg.Errorf("user handler - CreateAssignment - %v", err)
+		http.Error(w, "Failed to create assignment", http.StatusInternalServerError)
+		return
+	}
+
+	http.Error(w, "Assignment created successfully", http.StatusCreated)
 }
