@@ -54,10 +54,10 @@ func (userc *UserController) Authenticate(ctx context.Context, email, password s
 	return user, nil
 }
 
-func (userc *UserController) GetUserByID(ctx context.Context, id int64) (*m.User, error) {
+func (userc *UserController) GetUserByID(ctx context.Context, id int) (*m.User, error) {
 	userc.lg.Debugln("Getting user by ID at controller level")
 	var user m.User
-	err := userc.DB.QueryRow(ctx, "SELECT id, name, surname, role, passwrod FROM users WHERE id = $1", id).
+	err := userc.DB.QueryRow(ctx, "SELECT id, name, role, password FROM users WHERE id = $1", id).
 		Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.Role)
 	if err != nil {
 		userc.lg.Errorf("user controller - GetUserByID - db exec - %v", err)
@@ -66,28 +66,38 @@ func (userc *UserController) GetUserByID(ctx context.Context, id int64) (*m.User
 	return &user, nil
 }
 
-func (userc *UserController) GetAllUsers(ctx context.Context) ([]m.User, error) {
-	userc.lg.Debugln("Getting all users at controller level")
+func (userc *UserController) GetAllUsers(ctx context.Context, userID int) ([]m.User, error) {
 
-	rows, err := userc.DB.Query(ctx, "SELECT id, name, surname, email, role FROM users")
+	users := make([]m.User, 0)
+
+	user, err := userc.GetUserByID(ctx, userID)
+
 	if err != nil {
-		userc.lg.Errorf("user controller - GetAllUsers - db query - %v", err)
+		userc.lg.Printf("user controller - GetAllUsers - get user by id - %v", err)
 		return nil, err
 	}
-	defer rows.Close()
-
-	var users []m.User
-	for rows.Next() {
-		var user m.User
-		if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Role); err != nil {
-			userc.lg.Errorf("user controller - GetAllUsers - scan row - %v", err)
+	if user.Role != "teacher" {
+		userc.lg.Println("user controller - GetAllUsers - no permission for user")
+		return nil, err
+	} else {
+		rows, err := userc.DB.Query(ctx, "SELECT id, name, email, role FROM users")
+		if err != nil {
+			userc.lg.Errorf("user controller - GetAllUsers - db query - %v", err)
 			return nil, err
 		}
-		users = append(users, user)
-	}
-	if err := rows.Err(); err != nil {
-		userc.lg.Errorf("user controller - GetAllUsers - rows iteration - %v", err)
-		return nil, err
+		defer rows.Close()
+		for rows.Next() {
+			var user m.User
+			if err := rows.Scan(&user.ID, &user.Name, &user.Email, &user.Role); err != nil {
+				userc.lg.Errorf("user controller - GetAllUsers - scan row - %v", err)
+				return nil, err
+			}
+			users = append(users, user)
+		}
+		if err := rows.Err(); err != nil {
+			userc.lg.Errorf("user controller - GetAllUsers - rows iteration - %v", err)
+			return nil, err
+		}
 	}
 
 	return users, nil

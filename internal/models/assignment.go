@@ -1,34 +1,39 @@
 package models
 
-type Topic struct {
+type Subject struct {
 	ID   int
 	Name string
 }
 
-type Subject struct {
-	ID           int
-	Name         string
-	OverallScore int
-	TeacherID    int
-	StudentID    int
+type Topic struct {
+	ID        int
+	Name      string
+	SubjectID int
 }
 
 type Assignment struct {
 	ID        int
 	Name      string
-	Score     int
 	TopicID   int
-	SubjectID int
+	Weight    int
+	TeacherID int
 }
 
 type Question struct {
-	ID   int
-	Name string
+	ID           int
+	Text         string
+	AssignmentID int
 }
 
 type Answer struct {
 	ID         int
-	Name       string
+	Text       string
 	IsCorrect  bool
 	QuestionID int
+}
+
+
+type CreateAssignmentRequest struct {
+	Assignment Assignment
+	StudentIDs []int
 }

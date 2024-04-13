@@ -65,3 +65,69 @@ func (userh *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	http.Error(w, "User logged in sucessfully", http.StatusCreated)
 }
+
+func (userh *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	session, err := userh.store.Get(r, "session-name")
+	if err != nil {
+		userh.lg.Errorf("user handler - GetUser - session get - %v", err)
+		http.Error(w, "Failed to retrieve session", http.StatusInternalServerError)
+		return
+	}
+
+	userID, ok := session.Values["user_id"].(int)
+	if !ok {
+		http.Error(w, "Session does not contain user ID", http.StatusUnauthorized)
+		return
+	}
+
+	user, err := userh.userc.GetUserByID(r.Context(), userID)
+	if err != nil {
+		userh.lg.Errorf("user handler - GetUser - get user by id - %v", err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	jsonResponse, err := json.Marshal(user)
+	if err != nil {
+		userh.lg.Errorf("user handler - GetUser - json marshal - %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
+}
+
+func (userh *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
+	session, err := userh.store.Get(r, "session-name")
+	if err != nil {
+		userh.lg.Errorf("user handler - GetUser - session get - %v", err)
+		http.Error(w, "Failed to retrieve session", http.StatusInternalServerError)
+		return
+	}
+
+	userID, ok := session.Values["user_id"].(int)
+	if !ok {
+		http.Error(w, "Session does not contain user ID", http.StatusUnauthorized)
+		return
+	}
+
+	users, err := userh.userc.GetAllUsers(r.Context(), userID)
+	if err != nil {
+		userh.lg.Errorf("user handler - GetUsers - get all users - %v", err)
+		http.Error(w, "Failed to retrieve users", http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse, err := json.Marshal(users)
+	if err != nil {
+		userh.lg.Errorf("user handler - GetUsers - json marshal - %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
+}

@@ -64,7 +64,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./db/migrations:/migrations
+      - ./migrations:/migrations
     entrypoint:
       [
         "migrate",
