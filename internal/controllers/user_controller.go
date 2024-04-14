@@ -19,16 +19,16 @@ type UserController struct {
 }
 
 func (userc *UserController) GetPerformance(ctx context.Context, userID int) (*m.Performance, error) {
-  userc.lg.Debugln("Getting user performance")
-  var performance m.Performance
+	userc.lg.Debugln("Getting user performance")
+	var performance m.Performance
 
-  err := userc.DB.QueryRow(ctx, "SELECT id, kinematics, dynamic, electrodynamics, acids, chemicalbonding, trigonometry, linearalgebra, geometry, probability FROM performance WHERE id = $1", userID).Scan(&performance.ID, &performance.Kinematics, &performance.Dynamics, &performance.Electrodynamics, &performance.Acids, &performance.ChemicalBonding, &performance.Trigonometry, &performance.LinearAlgebra, &performance.Geometry, &performance.Probability)
-  if err != nil {
-    userc.lg.Errorf("user controller - %v", err)
+	err := userc.DB.QueryRow(ctx, "SELECT id, kinematics, dynamic, electrodynamics, acids, chemicalbonding, trigonometry, linearalgebra, geometry, probability FROM performance WHERE id = $1", userID).Scan(&performance.ID, &performance.Kinematics, &performance.Dynamics, &performance.Electrodynamics, &performance.Acids, &performance.ChemicalBonding, &performance.Trigonometry, &performance.LinearAlgebra, &performance.Geometry, &performance.Probability)
+	if err != nil {
+		userc.lg.Errorf("user controller - %v", err)
 		return nil, err
-  }
-  
-  return &performance, nil
+	}
+
+	return &performance, nil
 }
 
 func (userc *UserController) CreateUser(ctx context.Context, user *m.User) error {
@@ -97,6 +97,47 @@ func (userc *UserController) GetUserPerformance(ctx context.Context, userID int)
 
 	return performance, nil
 }
+
+func (userc *UserController) GetAllUserPerformance(ctx context.Context, userID int) (*[]m.Performance, error) {
+	performances := make([]m.Performance, 0)
+
+	rows, err := userc.DB.Query(ctx, `
+		SELECT * FROM performance WHERE id <> $1
+    `, userID)
+	if err != nil {
+		userc.lg.Errorf("user controller - GetAllUserPerformance - db query - %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var performance m.Performance
+		if err := rows.Scan(
+			&performance.ID,
+			// Adjust the fields of the struct to match all columns returned by the query
+			&performance.Kinematics,
+			&performance.Dynamics,
+			&performance.Electrodynamics,
+			&performance.Acids,
+			&performance.ChemicalBonding,
+			&performance.Trigonometry,
+			&performance.LinearAlgebra,
+			&performance.Geometry,
+			&performance.Probability,
+		); err != nil {
+			userc.lg.Errorf("user controller - GetAllUserPerformance - scan - %v", err)
+			return nil, err
+		}
+		performances = append(performances, performance)
+	}
+	if err := rows.Err(); err != nil {
+		userc.lg.Errorf("user controller - GetAllUserPerformance - row iteration - %v", err)
+		return nil, err
+	}
+
+	return &performances, nil
+}
+
 func (userc *UserController) GetAllUsers(ctx context.Context, userID int) ([]m.User, error) {
 
 	users := make([]m.User, 0)

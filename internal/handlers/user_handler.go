@@ -202,3 +202,36 @@ func (userh *UserHandler) GetUsers(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(jsonResponse)
 }
+
+func (userh *UserHandler) GetAllPerformance(w http.ResponseWriter, r *http.Request) {
+	session, err := userh.store.Get(r, "session-name")
+	if err != nil {
+		userh.lg.Errorf("user handler - GetUser - session get - %v", err)
+		http.Error(w, "Failed to retrieve session", http.StatusInternalServerError)
+		return
+	}
+
+	userID, ok := session.Values["user_id"].(int)
+	if !ok {
+		http.Error(w, "Session does not contain user ID", http.StatusUnauthorized)
+		return
+	}
+
+	performances, err := userh.userc.GetAllUserPerformance(r.Context(), userID)
+	if err != nil {
+		userh.lg.Errorf("user handler - GetUsers - get all performances - %v", err)
+		http.Error(w, "Failed to retrieve performances", http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse, err := json.Marshal(performances)
+	if err != nil {
+		userh.lg.Errorf("user handler - GetUsers - json marshal - %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
+}
