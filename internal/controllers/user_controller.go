@@ -18,7 +18,7 @@ type UserController struct {
 	lg *logrus.Logger
 }
 
-func (userc *UserController) GetPerformance(ctx context.Context, userID int64) (*m.Performance, error) {
+func (userc *UserController) GetPerformance(ctx context.Context, userID int) (*m.Performance, error) {
   userc.lg.Debugln("Getting user performance")
   var performance m.Performance
 

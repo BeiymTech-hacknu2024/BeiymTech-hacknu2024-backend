@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/BeiymTech-hacknu2024/BeiymTech-hacknu2024-backend/internal/controllers"
@@ -28,13 +29,13 @@ func (userh *UserHandler) GeneratePerformance(w http.ResponseWriter, r *http.Req
 	userh.lg.Debugln("User Performance at handler level")
 	var performance *models.Performance // Change type to pointer
 	session, err := userh.store.Get(r, "session-name")
+	fmt.Println(session)
 	if err != nil {
-		userh.lg.Errorf("user handler - BatchCreateUsers - session get - %v", err)
+		userh.lg.Errorf("user handler - GeneratePerformance - session get - %v", err)
 		http.Error(w, "Failed to retrieve session", http.StatusInternalServerError)
 		return
 	}
-
-	userID, ok := session.Values["user_id"].(int64)
+	userID, ok := session.Values["user_id"].(int)
 	if !ok {
 		http.Error(w, "Session does not contain user ID", http.StatusUnauthorized)
 		return
