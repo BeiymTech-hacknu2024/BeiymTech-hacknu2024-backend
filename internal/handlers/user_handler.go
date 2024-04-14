@@ -26,7 +26,7 @@ func NewUserHandler(userc *controllers.UserController, store *sessions.CookieSto
 
 func (userh *UserHandler) GeneratePerformance(w http.ResponseWriter, r *http.Request) {
 	userh.lg.Debugln("User Performance at handler level")
-	var performance models.Performance
+	var performance *models.Performance // Change type to pointer
 	session, err := userh.store.Get(r, "session-name")
 	if err != nil {
 		userh.lg.Errorf("user handler - BatchCreateUsers - session get - %v", err)
@@ -39,7 +39,7 @@ func (userh *UserHandler) GeneratePerformance(w http.ResponseWriter, r *http.Req
 		http.Error(w, "Session does not contain user ID", http.StatusUnauthorized)
 		return
 	}
-	performance, err := userh.userc.GetPerformance(r.Context(), userID)
+	performance, err = userh.userc.GetPerformance(r.Context(), userID) // Remove := to use the already declared performance variable
 	if err != nil {
 		http.Error(w, "Failed to retrieve user performance", http.StatusInternalServerError)
 		return
