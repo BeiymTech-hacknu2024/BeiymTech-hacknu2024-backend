@@ -1,6 +1,5 @@
 CREATE TABLE users (
     ID SERIAL PRIMARY KEY,
-    PerformanceID INTEGER NOT NULL,
     Name VARCHAR(50) NOT NULL,
     Email VARCHAR(100) UNIQUE NOT NULL,
     Password VARCHAR(100) NOT NULL, -- Placeholder for hashed passwords
@@ -85,4 +84,3 @@ CREATE TABLE performance (
   Geometry INTEGER NOT NULL,
   Probability INTEGER NOT NULL
 );
-
