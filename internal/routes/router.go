@@ -18,7 +18,7 @@ func NewRouter(userh *handlers.UserHandler, assignh *handlers.AssignmentHandler)
 	r.With(userh.RequireAuth).Patch("/assignment/update", assignh.UpdateAssignment)
 	r.With(userh.RequireAuth).Post("/assignment/submit", assignh.SubmitAssignment)
 	// r.With(userh.RequireAuth).Post("/report/create", reporth.GenerateReport)
-
+  r.With(userh.RequireAuth).Get("/performance", userh.GeneratePerformance)
 	return r
 
 }

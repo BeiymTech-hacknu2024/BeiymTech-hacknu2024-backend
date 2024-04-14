@@ -24,6 +24,39 @@ func NewUserHandler(userc *controllers.UserController, store *sessions.CookieSto
 	}
 }
 
+func (userh *UserHandler) GeneratePerformance(w http.ResponseWriter, r *http.Request) {
+	userh.lg.Debugln("User Performance at handler level")
+	var performance models.Performance
+	session, err := userh.store.Get(r, "session-name")
+	if err != nil {
+		userh.lg.Errorf("user handler - BatchCreateUsers - session get - %v", err)
+		http.Error(w, "Failed to retrieve session", http.StatusInternalServerError)
+		return
+	}
+
+	userID, ok := session.Values["user_id"].(int64)
+	if !ok {
+		http.Error(w, "Session does not contain user ID", http.StatusUnauthorized)
+		return
+	}
+	performance, err := userh.userc.GetPerformance(r.Context(), userID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve user performance", http.StatusInternalServerError)
+		return
+	}
+
+	jsonResponse, err := json.Marshal(performance)
+	if err != nil {
+		userh.lg.Errorf("user handler - GetUser - json marshal - %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonResponse)
+}
+
 func (userh *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	userh.lg.Debugln("User Registration at handler level")
 	var user models.User

@@ -47,3 +47,16 @@ type SubmitRequest struct {
 	AssignmentID int                `json:"assignmentId"`
 	Answers      []AnswerSubmission `json:"answers"`
 }
+
+type Performance struct {
+	ID              int
+	Kinematics      int
+	Dynamics        int
+	Electrodynamics int
+	Acids           int
+	ChemicalBonding int
+	Trigonometry    int
+	LinearAlgebra   int
+	Geometry        int
+	Probability     int
+}

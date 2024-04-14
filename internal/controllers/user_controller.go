@@ -18,6 +18,19 @@ type UserController struct {
 	lg *logrus.Logger
 }
 
+func (userc *UserController) GetPerformance(ctx context.Context, userID int64) (*m.Performance, error) {
+  userc.lg.Debugln("Getting user performance")
+  var performance m.Performance
+
+  err := userc.DB.QueryRow(ctx, "SELECT id, kinematics, dynamic, electrodynamics, acids, chemicalbonding, trigonometry, linearalgebra, geometry, probability FROM performance WHERE id = $1", userID).Scan(&performance.ID, &performance.Kinematics, &performance.Dynamics, &performance.Electrodynamics, &performance.Acids, &performance.ChemicalBonding, &performance.Trigonometry, &performance.LinearAlgebra, &performance.Geometry, &performance.Probability)
+  if err != nil {
+    userc.lg.Errorf("user controller - %v", err)
+		return nil, err
+  }
+  
+  return &performance, nil
+}
+
 func (userc *UserController) CreateUser(ctx context.Context, user *m.User) error {
 	userc.lg.Debugln("User Creation at controller level")
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
