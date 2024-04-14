@@ -8,12 +8,12 @@ import (
 
 type Handlers struct {
 	UserHandler
+	AssignmentHandler
 }
 
-func NewHandlers(lg *logrus.Logger, userc *controllers.UserController, store *sessions.CookieStore) *Handlers {
+func NewHandlers(lg *logrus.Logger, userc *controllers.UserController, assignc *controllers.AssignmentController, store *sessions.CookieStore) *Handlers {
 	return &Handlers{
-		UserHandler: *NewUserHandler(userc, store, lg),
+		UserHandler:       *NewUserHandler(userc, store, lg),
+		AssignmentHandler: *NewAssignmentHandler(assignc, store, lg),
 	}
 }
-
-

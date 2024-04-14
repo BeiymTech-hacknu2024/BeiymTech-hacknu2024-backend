@@ -29,11 +29,18 @@ func main() {
 	}
 
 	userc := controllers.NewUserController(DB, lg)
+	assignc := controllers.NewAssignmentController(DB, lg, userc)
 	store := sessions.NewCookieStore([]byte(os.Getenv("SECRET_KEY")))
 	userh := handlers.NewUserHandler(userc, store, lg)
 
-	router := routes.NewRouter(userh)
+	assignh := handlers.NewAssignmentHandler(assignc, store, lg)
 
+	router := routes.NewRouter(userh, assignh)
+
+	router.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("pong"))
+	})
 	http.Handle("/", router)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))

@@ -6,10 +6,10 @@ import (
 
 type User struct {
 	ID       int
-	Name     string
-	Email    string
-	Password string
-	Role     string
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Role     string `json:"role"`
 }
 
 type UserActivity struct {
@@ -32,7 +32,9 @@ type StudentAssignment struct {
 }
 
 type StudentPerformanceBySubject struct {
-	SubjectID    int
-	StudentID    int
-	OverallScore *int // Using a pointer to int to allow null values
+	SubjectID        int
+	StudentID        int
+	OverallScore     *int // Using a pointer to int to allow null values
+	AssignmentID     int
+	AssignmentIDList []int
 }

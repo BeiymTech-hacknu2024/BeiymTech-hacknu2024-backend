@@ -12,11 +12,11 @@ type Topic struct {
 }
 
 type Assignment struct {
-	ID        int
-	Name      string
-	TopicID   int
-	Weight    int
-	TeacherID int
+	ID        int    `db:"id"`
+	Name      string `db:"name"`
+	TopicID   int    `db:"topicid"`
+	Weight    int    `db:"weight"`
+	TeacherID int    `db:"teacherid"`
 }
 
 type Question struct {
@@ -30,4 +30,20 @@ type Answer struct {
 	Text       string
 	IsCorrect  bool
 	QuestionID int
+}
+
+type CreateAssignmentRequest struct {
+	Assignment Assignment
+	StudentIDs []int
+}
+
+type AnswerSubmission struct {
+	QuestionID       int `json:"questionId"`
+	SelectedAnswerID int `json:"selectedAnswerId"`
+}
+
+type SubmitRequest struct {
+	StudentID    int                `json:"studentId"`
+	AssignmentID int                `json:"assignmentId"`
+	Answers      []AnswerSubmission `json:"answers"`
 }

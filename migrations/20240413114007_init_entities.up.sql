@@ -1,9 +1,11 @@
 CREATE TABLE users (
     ID SERIAL PRIMARY KEY,
-    Name VARCHAR(50),
+    Name VARCHAR(50) NOT NULL,
     Email VARCHAR(100) UNIQUE NOT NULL,
-    Password VARCHAR(100) NOT NULL,
-    Role VARCHAR(50) NOT NULL  -- Roles like 'Teacher', 'Student', 'Parent'
+    Password VARCHAR(100) NOT NULL, -- Placeholder for hashed passwords
+    Role VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE subjects (
@@ -68,3 +70,30 @@ CREATE TABLE student_performance_by_subject (
     PRIMARY KEY (SubjectID, StudentID)
 );
 
+CREATE TABLE user_activity_logs (
+    ID SERIAL PRIMARY KEY,
+    UserID INTEGER NOT NULL,
+    Timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    Route TEXT NOT NULL,
+    FOREIGN KEY (UserID) REFERENCES users(ID)
+);
+
+CREATE TABLE student_assignments (
+    ID SERIAL PRIMARY KEY,
+    AssignmentID INTEGER NOT NULL,
+    StudentID INTEGER NOT NULL,
+    Score INTEGER,  
+    FOREIGN KEY (AssignmentID) REFERENCES assignments(ID),
+    FOREIGN KEY (StudentID) REFERENCES users(ID)
+);
+
+CREATE TABLE student_performance_by_subject (
+    SubjectID INTEGER NOT NULL,
+    StudentID INTEGER NOT NULL,
+    OverallScore INTEGER, 
+    AssignmentID INTEGER, -- Add the assignment_id field
+    FOREIGN KEY (SubjectID) REFERENCES subjects(ID),
+    FOREIGN KEY (StudentID) REFERENCES users(ID),
+    FOREIGN KEY (AssignmentID) REFERENCES assignments(ID), -- Add foreign key constraint
+    PRIMARY KEY (SubjectID, StudentID)
+);
